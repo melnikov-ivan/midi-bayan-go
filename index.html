@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XIAO-BLE Web Bluetooth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status.disconnected {
+            background: #fee;
+            color: #c33;
+        }
+
+        .status.connected {
+            background: #efe;
+            color: #3c3;
+        }
+
+        .status.scanning {
+            background: #eef;
+            color: #33c;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .value-display {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 50px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .value-display.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .info {
+            background: #e7f3ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #0066cc;
+        }
+
+        .error {
+            background: #fee;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #c33;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔵 XIAO-BLE Control</h1>
+        <p class="subtitle">Web Bluetooth для управления устройством</p>
+
+        <div id="status" class="status disconnected">Отключено</div>
+        <div id="error" class="error"></div>
+
+        <div class="info">
+            <strong>Service UUID:</strong> 12345678-9abc-def0-1234-56789abcdef0<br>
+            <strong>Characteristic UUID:</strong> 12345678-9abc-def0-1234-56789abcdef1
+        </div>
+
+        <button id="connectBtn" class="btn-primary" onclick="connect()">Подключиться</button>
+        <button id="disconnectBtn" class="btn-danger" onclick="disconnect()" disabled>Отключиться</button>
+
+        <div class="input-group">
+            <label>Прочитанное значение:</label>
+            <div id="readValue" class="value-display empty">Значение не прочитано</div>
+            <button id="readBtn" class="btn-success" onclick="readCharacteristic()" disabled>Прочитать</button>
+        </div>
+
+        <div class="input-group">
+            <label>Отправить значение:</label>
+            <input type="text" id="writeValue" placeholder="Введите текст для отправки" />
+            <button id="writeBtn" class="btn-secondary" onclick="writeCharacteristic()" disabled>Отправить</button>
+        </div>
+    </div>
+
+    <script>
+        const SERVICE_UUID = '12345678-9abc-def0-1234-56789abcdef0';
+        const CHARACTERISTIC_UUID = '12345678-9abc-def0-1234-56789abcdef1';
+
+        let device = null;
+        let server = null;
+        let service = null;
+        let characteristic = null;
+
+        function updateStatus(text, className) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = text;
+            statusEl.className = `status ${className}`;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+
+        function updateButtons(connected) {
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('readBtn').disabled = !connected;
+            document.getElementById('writeBtn').disabled = !connected;
+        }
+
+        async function connect() {
+            try {
+                updateStatus('Поиск устройства...', 'scanning');
+                showError('');
+
+                // Проверка поддержки Web Bluetooth
+                if (!navigator.bluetooth) {
+                    throw new Error('Web Bluetooth не поддерживается в этом браузере. Используйте Chrome/Edge на десктопе или Android.');
+                }
+
+                // Поиск и подключение к устройству
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{
+                        services: [SERVICE_UUID]
+                    }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                updateStatus('Подключение...', 'scanning');
+
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
+                server = await device.gatt.connect();
+                updateStatus('Получение сервиса...', 'scanning');
+
+                service = await server.getPrimaryService(SERVICE_UUID);
+                updateStatus('Получение характеристики...', 'scanning');
+
+                characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                updateStatus('Подключено', 'connected');
+                updateButtons(true);
+
+                // Автоматически читаем значение при подключении
+                await readCharacteristic();
+
+            } catch (error) {
+                console.error('Ошибка подключения:', error);
+                showError(`Ошибка: ${error.message}`);
+                updateStatus('Ошибка подключения', 'disconnected');
+                updateButtons(false);
+                device = null;
+                server = null;
+                service = null;
+                characteristic = null;
+            }
+        }
+
+        function onDisconnected(event) {
+            console.log('Устройство отключено');
+            updateStatus('Отключено', 'disconnected');
+            updateButtons(false);
+            device = null;
+            server = null;
+            service = null;
+            characteristic = null;
+        }
+
+        function disconnect() {
+            if (device && device.gatt.connected) {
+                device.gatt.disconnect();
+            }
+            onDisconnected();
+        }
+
+        async function readCharacteristic() {
+            try {
+                if (!characteristic) {
+                    throw new Error('Характеристика не найдена');
+                }
+
+                updateStatus('Чтение...', 'scanning');
+                const value = await characteristic.readValue();
+                const decoder = new TextDecoder('utf-8');
+                const text = decoder.decode(value);
+
+                document.getElementById('readValue').textContent = text;
+                document.getElementById('readValue').classList.remove('empty');
+
+                updateStatus('Подключено', 'connected');
+                console.log('Прочитано:', text);
+
+            } catch (error) {
+                console.error('Ошибка чтения:', error);
+                showError(`Ошибка чтения: ${error.message}`);
+                updateStatus('Подключено', 'connected');
+            }
+        }
+
+        async function writeCharacteristic() {
+            try {
+                if (!characteristic) {
+                    throw new Error('Характеристика не найдена');
+                }
+
+                const input = document.getElementById('writeValue');
+                const text = input.value;
+
+                if (!text) {
+                    showError('Введите текст для отправки');
+                    return;
+                }
+
+                updateStatus('Отправка...', 'scanning');
+                const encoder = new TextEncoder();
+                const value = encoder.encode(text);
+
+                await characteristic.writeValue(value);
+
+                updateStatus('Отправлено', 'connected');
+                console.log('Отправлено:', text);
+
+                // Очищаем поле ввода
+                input.value = '';
+
+                // Автоматически читаем обновленное значение
+                setTimeout(() => {
+                    readCharacteristic();
+                }, 300);
+
+            } catch (error) {
+                console.error('Ошибка записи:', error);
+                showError(`Ошибка записи: ${error.message}`);
+                updateStatus('Подключено', 'connected');
+            }
+        }
+
+        // Обработка Enter в поле ввода
+        document.getElementById('writeValue').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                writeCharacteristic();
+            }
+        });
+    </script>
+</body>
+</html>
