@@ -1,7 +1,11 @@
 package main
 
+// BLE peripheral (XIAO BLE):
+//   tinygo flash -target=xiao-ble -tags=ble simple.go
+//   tinygo monitor
 import (
 	"tinygo.org/x/bluetooth"
+	"time"
 )
 
 var adapter = bluetooth.DefaultAdapter
@@ -59,6 +63,8 @@ func main() {
 
 	// Бесконечный цикл для поддержания работы
 	for {
+		time.Sleep(time.Second)
+		println("tick")
 	}
 }
 
