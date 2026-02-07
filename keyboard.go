@@ -59,45 +59,28 @@ func readShiftRegister() uint8 {
 	return data
 }
 
-func main() {
-	// Настройка LED
-	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	led.High()
-
+// RunKeyboard читает регистр сдвига, при изменении бита отправляет KeyEvent в канал ch.
+// Закрывать ch не нужно — цикл бесконечный. Пин LED не трогает.
+func RunKeyboard(ch chan<- KeyEvent) {
 	// Настройка пинов для 74HC165N
-	// SH/LD - выход
 	shiftLoadPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	shiftLoadPin.High() // По умолчанию в режиме сдвига
-
-	// CLK - выход
+	shiftLoadPin.High()
 	clockPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	clockPin.Low()
-
-	// QH - вход
 	dataPin.Configure(machine.PinConfig{Mode: machine.PinInput})
 
-	println("Инициализация регистра сдвига 74HC165N")
-	println("SH/LD: D0, CLK: D1, QH: D2")
-	println("Начало чтения данных...")
-
-	var n = 0
-	// Основной цикл чтения данных
+	var prev uint8 = 0
 	for {
-		// Читаем данные из регистра сдвига
 		data := readShiftRegister()
-
-		// Выводим прочитанные данные
-		println("Данные:", formatBinary(data))
-
-		n = n + 1
-		if (n == 10000) {
-			led.Low()
-			time.Sleep(250 * time.Millisecond)
-			led.High()
-			n = 0
+		for i := uint8(0); i < 8; i++ {
+			mask := uint8(1 << i)
+			was := (prev & mask) != 0
+			now := (data & mask) != 0
+			if was != now {
+				ch <- KeyEvent{Bit: i, Pressed: now}
+			}
 		}
-		// Задержка перед следующим чтением
-		// time.Sleep(50 * time.Millisecond)
+		prev = data
 		time.Sleep(1)
 	}
 }
