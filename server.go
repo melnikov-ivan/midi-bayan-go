@@ -66,11 +66,13 @@ func StartBLEService() {
 		},
 	}))
 
-	// Реклама
+	// Реклама: на nRF52 в TinyGo в объявлении поддерживаются только 16-битные UUID.
+	// Берём короткую форму из первых двух байт 128-битного UUID сервиса (0x1234).
+	advServiceUUID := bluetooth.New16BitUUID(0x1234)
 	adv := adapter.DefaultAdvertisement()
 	must(adv.Configure(bluetooth.AdvertisementOptions{
-		LocalName: "Midi-Bayan",
-		// ServiceUUIDs: []bluetooth.UUID{serviceUUID},
+		LocalName:    "Midi-Bayan",
+		ServiceUUIDs: []bluetooth.UUID{advServiceUUID},
 	}))
 	must(adv.Start())
 

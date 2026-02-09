@@ -250,11 +250,11 @@
 
                 // Поиск и подключение к устройству
                 device = await navigator.bluetooth.requestDevice({
-                    // filters: [{
-                        // services: [SERVICE_UUID]
+                    filters: [{
+                        services: [0x1234]
                         //name: 'Midi-Bayan'
-                    // }],
-                    acceptAllDevices: true,
+                    }],
+                    // acceptAllDevices: true,
                     optionalServices: [SERVICE_UUID]
                 });
 
