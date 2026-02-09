@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	led = machine.LED // 16
 
 	// Пины для подключения 74HC165N
 	// SH/LD (Shift/Load) - управляющий пин для загрузки параллельных данных
@@ -60,7 +59,7 @@ func readShiftRegister() uint8 {
 }
 
 // RunKeyboard читает регистр сдвига, при изменении бита отправляет KeyEvent в канал ch.
-// Закрывать ch не нужно — цикл бесконечный. Пин LED не трогает.
+// Закрывать ch не нужно — цикл бесконечный.
 func RunKeyboard(ch chan<- KeyEvent) {
 	// Настройка пинов для 74HC165N
 	shiftLoadPin.Configure(machine.PinConfig{Mode: machine.PinOutput})

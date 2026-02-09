@@ -26,59 +26,7 @@ type KeyEvent struct {
 
 var led = machine.LED
 
-// Пины для 74HC165N
-var (
-	shiftLoadPin = machine.D0
-	clockPin     = machine.D1
-	dataPin      = machine.D2
-)
 
-const shiftDelay = 1 * time.Microsecond
-
-func readShiftRegister() uint8 {
-	var data uint8
-	shiftLoadPin.Low()
-	time.Sleep(shiftDelay)
-	shiftLoadPin.High()
-	time.Sleep(shiftDelay)
-	for i := 0; i < 8; i++ {
-		if i > 0 {
-			clockPin.Low()
-			time.Sleep(shiftDelay)
-			clockPin.High()
-			time.Sleep(shiftDelay)
-			clockPin.Low()
-			time.Sleep(shiftDelay)
-		}
-		if dataPin.Get() {
-			data |= (1 << (7 - i))
-		}
-	}
-	return data
-}
-
-// RunKeyboard читает регистр сдвига, при изменении бита отправляет KeyEvent в канал ch.
-func RunKeyboard(ch chan<- KeyEvent) {
-	shiftLoadPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	shiftLoadPin.High()
-	clockPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	clockPin.Low()
-	dataPin.Configure(machine.PinConfig{Mode: machine.PinInput})
-	var prev uint8
-	for {
-		data := readShiftRegister()
-		for i := uint8(0); i < 8; i++ {
-			mask := uint8(1 << i)
-			was := (prev & mask) != 0
-			now := (data & mask) != 0
-			if was != now {
-				ch <- KeyEvent{Bit: i, Pressed: now}
-			}
-		}
-		prev = data
-		time.Sleep(1)
-	}
-}
 
 func main() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -96,9 +44,12 @@ func main() {
 	keyCh := make(chan KeyEvent, 8)
 	go RunKeyboard(keyCh)
 
-	// Читаем события из канала и отправляем MIDI: бит 0 = C4, бит 1 = C#4, ...
+	// Ноты берём из конфига keymap.BitToNote
 	for ev := range keyCh {
-		note := midi.Note(uint8(midi.C4) + ev.Bit)
+		if int(ev.Bit) >= len(BitToNote) {
+			continue
+		}
+		note := midi.Note(BitToNote[ev.Bit])
 		if ev.Pressed {
 			_ = m.NoteOn(cable, ch, note, velocity)
 			println("MIDI: Note On ", note)

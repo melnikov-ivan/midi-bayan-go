@@ -2,7 +2,7 @@
 TARGET ?= xiao-ble
 
 flash:
-	tinygo flash -target=$(TARGET) controller.go
+	tinygo flash -target=$(TARGET) .
 
 monitor:
 	tinygo monitor
