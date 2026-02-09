@@ -187,8 +187,8 @@
         <div id="error" class="error"></div>
 
         <div class="info">
-            <strong>Service UUID:</strong> 12345678-9abc-def0-1234-56789abcdef0<br>
-            <strong>Characteristic UUID:</strong> 12345678-9abc-def0-1234-56789abcdef1
+            <strong>Service UUID:</strong> 12345678-1234-5678-1234-567890abcdef<br>
+            <strong>Characteristic UUID:</strong> fedcba09-8765-4321-8765-432110325476
         </div>
 
         <button id="connectBtn" class="btn-primary" onclick="connect()">Подключиться</button>
@@ -208,8 +208,8 @@
     </div>
 
     <script>
-        const SERVICE_UUID = '12345678-9abc-def0-1234-56789abcdef0';
-        const CHARACTERISTIC_UUID = '12345678-9abc-def0-1234-56789abcdef1';
+        const SERVICE_UUID = '12345678-1234-5678-1234-567890abcdef';
+        const CHARACTERISTIC_UUID = 'fedcba09-8765-4321-8765-432110325476';
 
         let device = null;
         let server = null;
@@ -250,9 +250,11 @@
 
                 // Поиск и подключение к устройству
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{
-                        services: [SERVICE_UUID]
-                    }],
+                    // filters: [{
+                        // services: [SERVICE_UUID]
+                        //name: 'Midi-Bayan'
+                    // }],
+                    acceptAllDevices: true,
                     optionalServices: [SERVICE_UUID]
                 });
 

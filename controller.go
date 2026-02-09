@@ -35,6 +35,8 @@ func main() {
 	m := midi.Port()
 	println("USB MIDI Controller запущен")
 
+	go StartBLEService()
+
 	const (
 		cable    = 0
 		ch       = 1   // MIDI канал 1..16
