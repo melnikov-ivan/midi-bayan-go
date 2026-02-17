@@ -1,21 +1,12 @@
 package main
 
-// Пример отправки MIDI-команд через USB.
-// USB MIDI поддерживается на платах с нативным USB (например Raspberry Pi Pico):
+// MIDI-команды отправляются через UART (DIN, 31250 бод). См. out.go.
 //
-//   tinygo flash -target=xiao-ble controller.go
+//   tinygo flash -target=xiao-ble .
 //   tinygo monitor
-//
-// Подключите плату по USB к ПК — в системе появится USB MIDI-устройство.
-// Для XIAO BLE (nRF52840) проверьте поддержку USB MIDI в TinyGo для вашей платы.
-//
-// Типичные команды: CC (Control Change), Note On, Note Off.
-// Импорт: machine/usb/adc/midi (TinyGo 0.40+) или machine/usb/midi на других версиях.
 import (
 	"machine"
 	"time"
-
-	"machine/usb/adc/midi"
 )
 
 // KeyEvent — изменение состояния клавиши: бит 0..7, нажата или отпущена.
@@ -26,20 +17,17 @@ type KeyEvent struct {
 
 var led = machine.LED
 
-
-
 func main() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	led.Low()
 
-	m := midi.Port()
-	println("USB MIDI Controller запущен")
+	startMidiOut()
+	println("MIDI Controller (UART) запущен")
 
 	go StartBLEService()
 
 	const (
-		cable    = 0
-		ch       = 1   // MIDI канал 1..16
+		ch       = 0   // MIDI канал 0..15
 		velocity = 100
 	)
 
@@ -51,12 +39,12 @@ func main() {
 		if int(ev.Bit) >= len(BitToNote) {
 			continue
 		}
-		note := midi.Note(BitToNote[ev.Bit])
+		note := BitToNote[ev.Bit]
 		if ev.Pressed {
-			_ = m.NoteOn(cable, ch, note, velocity)
+			SendNoteOn(ch, note, velocity)
 			println("MIDI: Note On ", note)
 		} else {
-			_ = m.NoteOff(cable, ch, note, 0)
+			SendNoteOff(ch, note)
 			println("MIDI: Note Off", note)
 		}
 		blink()
