@@ -1,8 +1,9 @@
 package main
 
 import (
-	"tinygo.org/x/bluetooth"
 	"time"
+
+	"tinygo.org/x/bluetooth"
 )
 
 var adapter = bluetooth.DefaultAdapter
@@ -78,13 +79,26 @@ func StartBLEService() {
 
 	println("BLE peripheral started, advertising as 'XIAO-TinyGo'")
 
-	// Бесконечный цикл: выводим и синхронизируем только при новом значении
+	// Бесконечный цикл: парсим входящие сообщения и синхронизируем только при новом значении
 	for {
 		time.Sleep(time.Second)
 		if hasNewValue && charValueLen > 0 {
-			char.Write(charValueBuf[:charValueLen])
-			println("Characteristic value:", string(charValueBuf[:charValueLen]))
 			hasNewValue = false
+			msg := charValueBuf[:charValueLen]
+			cmd, payload, ok := parseMessage(msg)
+			if !ok {
+				println("parse error or bad CRC, len=", charValueLen)
+				continue
+			}
+			switch cmd {
+			case cmdGetProgram:
+				if ch, inst, oct, ok := handleGetProgram(payload); ok {
+					charValueBuf[0], charValueBuf[1], charValueBuf[2] = ch, inst, oct
+					char.Write(charValueBuf[:3])
+				}
+			default:
+				println("unknown command:", cmd)
+			}
 		}
 		println("tick")
 	}

@@ -201,10 +201,11 @@
         </div>
 
         <div class="input-group">
-            <label>Отправить значение:</label>
-            <input type="text" id="writeValue" placeholder="Введите текст для отправки" />
-            <button id="writeBtn" class="btn-secondary" onclick="writeCharacteristic()" disabled>Отправить</button>
+            <label>Номер канала (0–15):</label>
+            <input type="number" id="channelValue" min="0" max="15" value="0" />
+            <button id="getProgramBtn" class="btn-secondary" onclick="sendGetProgram()" disabled>Запросить программу</button>
         </div>
+
     </div>
 
     <script>
@@ -231,11 +232,40 @@
             }, 5000);
         }
 
+        const CMD_GET_PROGRAM = 0x01;
+
+        function crc8(data) {
+            let crc = 0;
+            for (let i = 0; i < data.length; i++) {
+                crc ^= data[i];
+                for (let b = 0; b < 8; b++) {
+                    if (crc & 0x80) {
+                        crc = ((crc << 1) ^ 0x07) & 0xff;
+                    } else {
+                        crc = (crc << 1) & 0xff;
+                    }
+                }
+            }
+            return crc;
+        }
+
+        function buildGetProgramMessage(channel) {
+            const payload = new Uint8Array([channel, 0, 0]);
+            const payloadLen = payload.length;
+            const msg = new Uint8Array(1 + 2 + payloadLen + 1);
+            msg[0] = CMD_GET_PROGRAM;
+            msg[1] = payloadLen & 0xff;
+            msg[2] = (payloadLen >> 8) & 0xff;
+            msg.set(payload, 3);
+            msg[3 + payloadLen] = crc8(msg.subarray(0, 3 + payloadLen));
+            return msg;
+        }
+
         function updateButtons(connected) {
             document.getElementById('connectBtn').disabled = connected;
             document.getElementById('disconnectBtn').disabled = !connected;
             document.getElementById('readBtn').disabled = !connected;
-            document.getElementById('writeBtn').disabled = !connected;
+            document.getElementById('getProgramBtn').disabled = !connected;
         }
 
         async function connect() {
@@ -313,14 +343,18 @@
 
                 updateStatus('Чтение...', 'scanning');
                 const value = await characteristic.readValue();
-                const decoder = new TextDecoder('utf-8');
-                const text = decoder.decode(value);
+                const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+                const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                let text = hex;
+                if (bytes.length === 3) {
+                    text = `[${hex}]\nКанал: ${bytes[0]}, Инструмент: ${bytes[1]}, Октава: ${bytes[2]}`;
+                }
 
                 document.getElementById('readValue').textContent = text;
                 document.getElementById('readValue').classList.remove('empty');
 
                 updateStatus('Подключено', 'connected');
-                console.log('Прочитано:', text);
+                console.log('Прочитано (байты):', hex);
 
             } catch (error) {
                 console.error('Ошибка чтения:', error);
@@ -329,50 +363,31 @@
             }
         }
 
-        async function writeCharacteristic() {
+        async function sendGetProgram() {
             try {
                 if (!characteristic) {
                     throw new Error('Характеристика не найдена');
                 }
-
-                const input = document.getElementById('writeValue');
-                const text = input.value;
-
-                if (!text) {
-                    showError('Введите текст для отправки');
+                const input = document.getElementById('channelValue');
+                let channel = parseInt(input.value, 10);
+                if (isNaN(channel) || channel < 0 || channel > 15) {
+                    showError('Введите номер канала от 0 до 15');
                     return;
                 }
-
-                updateStatus('Отправка...', 'scanning');
-                const encoder = new TextEncoder();
-                const value = encoder.encode(text);
-
-                await characteristic.writeValue(value);
-
-                updateStatus('Отправлено', 'connected');
-                console.log('Отправлено:', text);
-
-                // Очищаем поле ввода
-                input.value = '';
-
-                // Автоматически читаем обновленное значение
-                setTimeout(() => {
-                    readCharacteristic();
-                }, 300);
-
+                channel = channel & 0xff;
+                updateStatus('Отправка get_program...', 'scanning');
+                const msg = buildGetProgramMessage(channel);
+                await characteristic.writeValue(msg);
+                updateStatus('Подключено', 'connected');
+                console.log('Отправлено get_program, channel:', channel);
+                setTimeout(() => readCharacteristic(), 300);
             } catch (error) {
-                console.error('Ошибка записи:', error);
-                showError(`Ошибка записи: ${error.message}`);
+                console.error('Ошибка отправки get_program:', error);
+                showError(`Ошибка: ${error.message}`);
                 updateStatus('Подключено', 'connected');
             }
         }
 
-        // Обработка Enter в поле ввода
-        document.getElementById('writeValue').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                writeCharacteristic();
-            }
-        });
     </script>
 </body>
 </html>
