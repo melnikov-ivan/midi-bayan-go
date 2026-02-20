@@ -3,7 +3,7 @@ const CACHE = 'midi-bayan-pwa-v1';
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll(['./index.html', './manifest.json', './icon.svg'])
+      cache.addAll(['./index.html', './styles.css', './manifest.json', './icon.svg'])
     )
   );
   self.skipWaiting();
