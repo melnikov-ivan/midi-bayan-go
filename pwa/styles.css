@@ -116,7 +116,8 @@ label {
     font-weight: 500;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
@@ -125,9 +126,21 @@ input[type="text"] {
     transition: border-color 0.3s;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="number"]:focus {
     outline: none;
     border-color: #667eea;
+}
+
+.row-fields {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.row-fields .input-group {
+    flex: 1;
+    margin-bottom: 0;
 }
 
 .value-display {

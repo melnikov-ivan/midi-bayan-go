@@ -40,6 +40,21 @@
 
             <button id="disconnectBtnSettings" class="btn-danger" onclick="disconnect()">Отключиться</button>
 
+            <div class="row-fields">
+                <div class="input-group">
+                    <label>Инструмент</label>
+                    <input type="number" id="instrumentValue" min="0" max="127" value="0" />
+                </div>
+                <div class="input-group">
+                    <label>Громкость</label>
+                    <input type="number" id="volumeValue" min="0" max="127" value="100" />
+                </div>
+                <div class="input-group">
+                    <label>Октава</label>
+                    <input type="number" id="octaveValue" min="0" max="10" value="4" />
+                </div>
+            </div>
+
             <div class="input-group">
                 <label>Прочитанное значение:</label>
                 <div id="readValue" class="value-display empty">Значение не прочитано</div>
@@ -98,6 +113,12 @@
                 }
             }
             return crc;
+        }
+
+        function fillProgramFields(instrument, volume, octave) {
+            document.getElementById('instrumentValue').value = instrument;
+            document.getElementById('volumeValue').value = volume;
+            document.getElementById('octaveValue').value = octave;
         }
 
         function buildGetProgramMessage(channel) {
@@ -212,6 +233,7 @@
                 let text = hex;
                 if (bytes.length === 4) {
                     text = `[${hex}]\nКанал: ${bytes[0]}, Инструмент: ${bytes[1]}, Громкость: ${bytes[2]}, Октава: ${bytes[3]}`;
+                    fillProgramFields(bytes[1], bytes[2], bytes[3]);
                 }
 
                 document.getElementById('readValue').textContent = text;
