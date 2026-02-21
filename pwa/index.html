@@ -40,6 +40,16 @@
 
             <button id="disconnectBtnSettings" class="btn-danger" onclick="disconnect()">Отключиться</button>
 
+            <div class="input-group">
+                <label>Канал:</label>
+                <div class="channel-buttons">
+                    <button type="button" class="btn-channel active" data-channel="0" onclick="selectChannelAndGetProgram(0)">Мелодия</button>
+                    <button type="button" class="btn-channel" data-channel="1" onclick="selectChannelAndGetProgram(1)">Аккорд</button>
+                    <button type="button" class="btn-channel" data-channel="2" onclick="selectChannelAndGetProgram(2)">Бас</button>
+                </div>
+                <input type="hidden" id="channelValue" value="0" />
+            </div>
+
             <div class="row-fields">
                 <div class="input-group">
                     <label>Инструмент</label>
@@ -55,18 +65,7 @@
                 </div>
             </div>
 
-            <div class="input-group">
-                <label>Прочитанное значение:</label>
-                <div id="readValue" class="value-display empty">Значение не прочитано</div>
-                <button id="readBtn" class="btn-success" onclick="readCharacteristic()">Прочитать</button>
-            </div>
-
-            <div class="input-group">
-                <label>Номер канала (0–15):</label>
-                <input type="number" id="channelValue" min="0" max="15" value="0" />
-                <button id="getProgramBtn" class="btn-secondary" onclick="sendGetProgram()">Запросить программу</button>
-                <button id="saveBtn" class="btn-primary" onclick="sendSetProgram()">Сохранить</button>
-            </div>
+            <button id="saveBtn" class="btn-primary" onclick="sendSetProgram()">Сохранить</button>
         </div>
     </div>
 
@@ -277,18 +276,12 @@
                 const value = await characteristic.readValue();
                 const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
                 const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
-                let text = hex;
-                if (bytes.length === 4) {
-                    text = `[${hex}]\nКанал: ${bytes[0]}, Инструмент: ${bytes[1]}, Громкость: ${bytes[2]}, Октава: ${bytes[3]}`;
+                console.log('Прочитано значение характеристики:', hex, '| байты:', bytes[0], bytes[1], bytes[2], bytes[3]);
+                if (bytes.length >= 4) {
+                    console.log('  канал:', bytes[0], 'инструмент:', bytes[1], 'громкость:', bytes[2], 'октава:', bytes[3]);
                     fillProgramFields(bytes[1], bytes[2], bytes[3]);
                 }
-
-                document.getElementById('readValue').textContent = text;
-                document.getElementById('readValue').classList.remove('empty');
-
                 updateStatus('Подключено', 'connected');
-                console.log('Прочитано (байты):', hex);
-
             } catch (error) {
                 console.error('Ошибка чтения:', error);
                 showError(`Ошибка чтения: ${error.message}`);
@@ -296,24 +289,26 @@
             }
         }
 
+        function selectChannelAndGetProgram(channel) {
+            document.getElementById('channelValue').value = channel;
+            document.querySelectorAll('.btn-channel').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.channel, 10) === channel);
+            });
+            sendGetProgram();
+        }
+
         async function sendGetProgram() {
             try {
                 if (!characteristic) {
                     throw new Error('Характеристика не найдена');
                 }
-                const input = document.getElementById('channelValue');
-                let channel = parseInt(input.value, 10);
-                if (isNaN(channel) || channel < 0 || channel > 15) {
-                    showError('Введите номер канала от 0 до 15');
-                    return;
-                }
-                channel = channel & 0xff;
+                const channel = parseInt(document.getElementById('channelValue').value, 10) & 0xff;
                 updateStatus('Отправка get_program...', 'scanning');
                 const msg = buildGetProgramMessage(channel);
                 await characteristic.writeValue(msg);
                 updateStatus('Подключено', 'connected');
                 console.log('Отправлено get_program, channel:', channel);
-                setTimeout(() => readCharacteristic(), 300);
+                setTimeout(() => readCharacteristic(), 500);
             } catch (error) {
                 console.error('Ошибка отправки get_program:', error);
                 showError(`Ошибка: ${error.message}`);
