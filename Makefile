@@ -1,4 +1,4 @@
-# MIDI-клавиатура (controller.go уже включает код клавиатуры 74HC165)
+
 TARGET ?= xiao-ble
 
 flash:

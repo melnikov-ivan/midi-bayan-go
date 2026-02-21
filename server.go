@@ -77,7 +77,7 @@ func StartBLEService() {
 	}))
 	must(adv.Start())
 
-	println("BLE peripheral started, advertising as 'XIAO-TinyGo'")
+	println("BLE peripheral started, advertising as 'Midi-Bayan'")
 
 	// Бесконечный цикл: парсим входящие сообщения и синхронизируем только при новом значении
 	for {
