@@ -117,17 +117,20 @@ label {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+select {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
     transition: border-color 0.3s;
+    background: white;
 }
 
 input[type="text"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+select:focus {
     outline: none;
     border-color: #667eea;
 }
@@ -139,8 +142,16 @@ input[type="number"]:focus {
 }
 
 .row-fields .input-group {
-    flex: 1;
     margin-bottom: 0;
+}
+
+.row-fields .input-group:nth-child(1) {
+    flex: 2;  /* инструмент 50% */
+}
+
+.row-fields .input-group:nth-child(2),
+.row-fields .input-group:nth-child(3) {
+    flex: 1;  /* громкость и октава по 25% */
 }
 
 .value-display {
