@@ -1,9 +1,10 @@
 package main
 
-// Config хранит настройки канала: номер канала, инструмент и октаву.
+// Config хранит настройки канала: номер канала, инструмент, громкость и октаву.
 type Config struct {
 	Channel    byte
 	Instrument byte
+	Volume     byte
 	Octave     byte
 }
 
@@ -15,17 +16,18 @@ func init() {
 		ChannelConfigs[i] = Config{
 			Channel:    byte(i),
 			Instrument: byte(i), // Acoustic Grand Piano
-			Octave:     4, // средняя октава
+			Volume:     100,     // громкость по умолчанию (0–127)
+			Octave:     4,       // средняя октава
 		}
 	}
 }
 
-// GetChannelConfig возвращает Instrument и Octave для канала channel.
-// Если channel >= 16, возвращает 0, 0.
-func GetChannelConfig(channel byte) (instrument, octave byte) {
+// GetChannelConfig возвращает Instrument, Volume и Octave для канала channel.
+// Если channel >= 16, возвращает 0, 0, 0.
+func GetChannelConfig(channel byte) (instrument, volume, octave byte) {
 	if channel >= 16 {
-		return 0, 0
+		return 0, 0, 0
 	}
 	c := ChannelConfigs[channel]
-	return c.Instrument, c.Octave
+	return c.Instrument, c.Volume, c.Octave
 }

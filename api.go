@@ -44,15 +44,15 @@ func parseMessage(buf []byte) (cmd byte, payload []byte, ok bool) {
 	return cmd, payload, true
 }
 
-// handleGetProgram обрабатывает команду get_program: payload = [channel, instrument, octave].
-// Instrument и octave для ответа берутся из config по указанному channel.
-// Возвращает channel, instrument, octave и true при успехе; иначе ok == false.
-func handleGetProgram(payload []byte) (channel, instrument, octave byte, ok bool) {
+// handleGetProgram обрабатывает команду get_program: payload = [channel, ...].
+// Instrument, Volume и Octave для ответа берутся из config по указанному channel.
+// Возвращает channel, instrument, volume, octave и true при успехе; иначе ok == false.
+func handleGetProgram(payload []byte) (channel, instrument, volume, octave byte, ok bool) {
 	if len(payload) != 3 {
-		return 0, 0, 0, false
+		return 0, 0, 0, 0, false
 	}
 	channel = payload[0]
-	instrument, octave = GetChannelConfig(channel)
-	println("get_program: channel=", channel, "instrument=", instrument, "octave=", octave)
-	return channel, instrument, octave, true
+	instrument, volume, octave = GetChannelConfig(channel)
+	println("get_program: channel=", channel, "instrument=", instrument, "volume=", volume, "octave=", octave)
+	return channel, instrument, volume, octave, true
 }

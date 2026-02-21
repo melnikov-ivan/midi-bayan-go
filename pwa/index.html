@@ -210,8 +210,8 @@
                 const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
                 const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
                 let text = hex;
-                if (bytes.length === 3) {
-                    text = `[${hex}]\nКанал: ${bytes[0]}, Инструмент: ${bytes[1]}, Октава: ${bytes[2]}`;
+                if (bytes.length === 4) {
+                    text = `[${hex}]\nКанал: ${bytes[0]}, Инструмент: ${bytes[1]}, Громкость: ${bytes[2]}, Октава: ${bytes[3]}`;
                 }
 
                 document.getElementById('readValue').textContent = text;

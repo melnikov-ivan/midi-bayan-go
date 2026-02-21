@@ -92,9 +92,9 @@ func StartBLEService() {
 			}
 			switch cmd {
 			case cmdGetProgram:
-				if ch, inst, oct, ok := handleGetProgram(payload); ok {
-					charValueBuf[0], charValueBuf[1], charValueBuf[2] = ch, inst, oct
-					char.Write(charValueBuf[:3])
+				if ch, inst, vol, oct, ok := handleGetProgram(payload); ok {
+					charValueBuf[0], charValueBuf[1], charValueBuf[2], charValueBuf[3] = ch, inst, vol, oct
+					char.Write(charValueBuf[:4])
 				}
 			default:
 				println("unknown command:", cmd)
