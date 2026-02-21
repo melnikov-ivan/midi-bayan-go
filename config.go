@@ -31,3 +31,17 @@ func GetChannelConfig(channel byte) (instrument, volume, octave byte) {
 	c := ChannelConfigs[channel]
 	return c.Instrument, c.Volume, c.Octave
 }
+
+// SetChannelConfig сохраняет instrument, volume и octave для канала channel в ChannelConfigs.
+// Если channel >= 16, ничего не делает.
+func SetChannelConfig(channel, instrument, volume, octave byte) {
+	if channel >= 16 {
+		return
+	}
+	ChannelConfigs[channel] = Config{
+		Channel:    channel,
+		Instrument: instrument,
+		Volume:     volume,
+		Octave:     octave,
+	}
+}

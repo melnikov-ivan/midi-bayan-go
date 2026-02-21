@@ -2,6 +2,7 @@ package main
 
 const (
 	cmdGetProgram byte = 0x01
+	cmdSetProgram byte = 0x02
 )
 
 const minMessageLen = 4 // cmd(1) + len(2) + crc(1), payload может быть 0
@@ -55,4 +56,19 @@ func handleGetProgram(payload []byte) (channel, instrument, volume, octave byte,
 	instrument, volume, octave = GetChannelConfig(channel)
 	println("get_program: channel=", channel, "instrument=", instrument, "volume=", volume, "octave=", octave)
 	return channel, instrument, volume, octave, true
+}
+
+// handleSetProgram обрабатывает команду set_program: payload = [channel, instrument, volume, octave].
+// Сохраняет настройки в ChannelConfigs. Возвращает true при успехе.
+func handleSetProgram(payload []byte) bool {
+	if len(payload) != 4 {
+		return false
+	}
+	channel := payload[0]
+	instrument := payload[1]
+	volume := payload[2]
+	octave := payload[3]
+	SetChannelConfig(channel, instrument, volume, octave)
+	println("set_program: channel=", channel, "instrument=", instrument, "volume=", volume, "octave=", octave)
+	return true
 }

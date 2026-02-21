@@ -96,6 +96,8 @@ func StartBLEService() {
 					charValueBuf[0], charValueBuf[1], charValueBuf[2], charValueBuf[3] = ch, inst, vol, oct
 					char.Write(charValueBuf[:4])
 				}
+			case cmdSetProgram:
+				handleSetProgram(payload)
 			default:
 				println("unknown command:", cmd)
 			}
