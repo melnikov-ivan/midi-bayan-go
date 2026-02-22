@@ -16,16 +16,13 @@
     <div class="container">
         <!-- Экран входа: подключение к midi-сервису -->
         <div id="screenEntrance" class="screen">
-            <h1>🔵 XIAO-BLE Control</h1>
+            <h1>🔵 Midi-Bayan</h1>
             <p class="subtitle">Web Bluetooth для управления устройством</p>
 
             <div id="status" class="status disconnected">Отключено</div>
             <div id="error" class="error"></div>
 
-            <div class="info">
-                <strong>Service UUID:</strong> 12345678-1234-5678-1234-567890abcdef<br>
-                <strong>Characteristic UUID:</strong> fedcba09-8765-4321-8765-432110325476
-            </div>
+            <img src="bayan.jpg" alt="Баян" class="bayan-image" />
 
             <button id="connectBtn" class="btn-primary" onclick="connect()">Подключиться</button>
             <button id="disconnectBtn" class="btn-danger" onclick="disconnect()" disabled>Отключиться</button>
