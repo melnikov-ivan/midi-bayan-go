@@ -231,10 +231,15 @@
 
                 characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    processCharacteristicValue(event.target.value);
+                });
+                await characteristic.startNotifications();
+
                 updateStatus('Подключено', 'connected');
                 updateButtons(true);
 
-                // Автоматически читаем значение при подключении
+                // Начальное значение при подключении
                 await readCharacteristic();
 
             } catch (error) {
@@ -266,22 +271,26 @@
             onDisconnected();
         }
 
+        function processCharacteristicValue(value) {
+            const buf = value.buffer || value;
+            const bytes = new Uint8Array(buf, value.byteOffset || 0, value.byteLength || buf.byteLength);
+            const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+            console.log('Значение характеристики:', hex, '| байты:', bytes[0], bytes[1], bytes[2], bytes[3]);
+            if (bytes.length >= 4) {
+                console.log('  канал:', bytes[0], 'инструмент:', bytes[1], 'громкость:', bytes[2], 'октава:', bytes[3]);
+                fillProgramFields(bytes[1], bytes[2], bytes[3]);
+            }
+            updateStatus('Подключено', 'connected');
+        }
+
         async function readCharacteristic() {
             try {
                 if (!characteristic) {
                     throw new Error('Характеристика не найдена');
                 }
-
                 updateStatus('Чтение...', 'scanning');
                 const value = await characteristic.readValue();
-                const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-                const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
-                console.log('Прочитано значение характеристики:', hex, '| байты:', bytes[0], bytes[1], bytes[2], bytes[3]);
-                if (bytes.length >= 4) {
-                    console.log('  канал:', bytes[0], 'инструмент:', bytes[1], 'громкость:', bytes[2], 'октава:', bytes[3]);
-                    fillProgramFields(bytes[1], bytes[2], bytes[3]);
-                }
-                updateStatus('Подключено', 'connected');
+                processCharacteristicValue(value);
             } catch (error) {
                 console.error('Ошибка чтения:', error);
                 showError(`Ошибка чтения: ${error.message}`);
@@ -306,9 +315,9 @@
                 updateStatus('Отправка get_program...', 'scanning');
                 const msg = buildGetProgramMessage(channel);
                 await characteristic.writeValue(msg);
-                updateStatus('Подключено', 'connected');
+                updateStatus('Отправка get_program...', 'scanning');
                 console.log('Отправлено get_program, channel:', channel);
-                setTimeout(() => readCharacteristic(), 500);
+                // Ответ придёт по уведомлению (characteristicvaluechanged)
             } catch (error) {
                 console.error('Ошибка отправки get_program:', error);
                 showError(`Ошибка: ${error.message}`);
