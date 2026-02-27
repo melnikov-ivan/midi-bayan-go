@@ -39,14 +39,3 @@ function buildSetProgramMessage(channel, instrument, volume, octave) {
     msg[3 + payloadLen] = crc8(msg.subarray(0, 3 + payloadLen));
     return msg;
 }
-
-function fillProgramFields(instrument, volume, octave) {
-    const instEl = document.getElementById('instrumentValue');
-    instEl.value = String(Number(instrument) & 0x7f);
-    const volEl = document.getElementById('volumeValue');
-    volEl.value = volume;
-    document.getElementById('volumeValueDisplay').textContent = volume;
-    const octaveClamped = Math.max(-3, Math.min(3, Number(octave)));
-    document.getElementById('octaveValue').value = octaveClamped;
-    document.getElementById('octaveValueDisplay').textContent = octaveClamped;
-}

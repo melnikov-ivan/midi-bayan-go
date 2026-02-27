@@ -3,6 +3,7 @@ const CACHE = 'midi-bayan-pwa-v2';
 const PRECACHE = [
   './index.html',
   './api.js',
+  './ble.js',
   './styles.css',
   './manifest.json',
   './icon.svg',
