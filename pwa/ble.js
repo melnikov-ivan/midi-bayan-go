@@ -7,10 +7,6 @@ let service = null;
 let characteristic = null;
 let callbacks = null;
 
-function isConnected() {
-    return characteristic != null;
-}
-
 async function connect(cbs) {
     callbacks = cbs || {};
     const onConnected = () => (callbacks.onConnected && callbacks.onConnected());
@@ -96,6 +92,5 @@ window.BLE = {
     connect,
     disconnect,
     readValue,
-    writeValue,
-    isConnected
+    writeValue
 };
