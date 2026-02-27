@@ -22,7 +22,6 @@
             <p class="subtitle">Web Bluetooth для управления устройством</p>
 
             <div id="status" class="status disconnected">Отключено</div>
-            <div id="error" class="error"></div>
 
             <img src="bayan.jpg" alt="Баян" class="bayan-image" />
 
@@ -83,15 +82,6 @@
                 statusSettings.textContent = text;
                 statusSettings.className = `status ${className}`;
             }
-        }
-
-        function showError(message) {
-            const errorEl = document.getElementById('error');
-            errorEl.textContent = message;
-            errorEl.classList.add('show');
-            setTimeout(() => {
-                errorEl.classList.remove('show');
-            }, 5000);
         }
 
         // General MIDI Program names (0–127)
@@ -157,7 +147,6 @@
         async function connect() {
             const ok = await BLE.connect({
                 onStatus: updateStatus,
-                onError: showError,
                 onConnected: () => {
                     updateButtons(true);
                     readCharacteristic();
@@ -204,7 +193,6 @@
                 processCharacteristicValue(bytes);
             } catch (error) {
                 console.error('Ошибка чтения:', error);
-                showError(`Ошибка чтения: ${error.message}`);
                 updateStatus('Подключено', 'connected');
             }
         }
@@ -228,7 +216,6 @@
                 // Ответ придёт по уведомлению (characteristicvaluechanged)
             } catch (error) {
                 console.error('Ошибка отправки get_program:', error);
-                showError(`Ошибка: ${error.message}`);
                 updateStatus('Подключено', 'connected');
             }
         }
@@ -240,19 +227,19 @@
                 const volume = parseInt(document.getElementById('volumeValue').value, 10);
                 const octave = parseInt(document.getElementById('octaveValue').value, 10);
                 if (isNaN(channel) || channel < 0 || channel > 15) {
-                    showError('Номер канала должен быть от 0 до 15');
+                    console.log('Ошибка валидации: канал должен быть от 0 до 15', channel);
                     return;
                 }
                 if (isNaN(instrument) || instrument < 0 || instrument > 127) {
-                    showError('Инструмент должен быть от 0 до 127');
+                    console.log('Ошибка валидации: инструмент должен быть от 0 до 127', instrument);
                     return;
                 }
                 if (isNaN(volume) || volume < 0 || volume > 127) {
-                    showError('Громкость должна быть от 0 до 127');
+                    console.log('Ошибка валидации: громкость должна быть от 0 до 127', volume);
                     return;
                 }
                 if (isNaN(octave) || octave < -3 || octave > 3) {
-                    showError('Октава должна быть от -3 до 3');
+                    console.log('Ошибка валидации: октава должна быть от -3 до 3', octave);
                     return;
                 }
                 updateStatus('Сохранение...', 'scanning');
@@ -261,8 +248,7 @@
                 updateStatus('Подключено', 'connected');
                 console.log('Отправлено set_program:', channel, instrument, volume, octave);
             } catch (error) {
-                console.error('Ошибка отправки set_program:', error);
-                showError(`Ошибка: ${error.message}`);
+                console.log('Ошибка отправки set_program:', error);
                 updateStatus('Подключено', 'connected');
             }
         }

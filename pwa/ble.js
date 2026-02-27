@@ -14,14 +14,12 @@ function isConnected() {
 async function connect(cbs) {
     callbacks = cbs || {};
     const onStatus = (text, className) => (callbacks.onStatus && callbacks.onStatus(text, className));
-    const onError = (msg) => (callbacks.onError && callbacks.onError(msg));
     const onConnected = () => (callbacks.onConnected && callbacks.onConnected());
     const onDisconnected = () => (callbacks.onDisconnected && callbacks.onDisconnected());
     const onValue = (bytes) => (callbacks.onValue && callbacks.onValue(bytes));
 
     try {
         onStatus('Поиск устройства...', 'scanning');
-        onError('');
 
         if (!navigator.bluetooth) {
             throw new Error('Web Bluetooth не поддерживается в этом браузере. Используйте Chrome/Edge на десктопе или Android.');
@@ -57,7 +55,6 @@ async function connect(cbs) {
         return true;
     } catch (error) {
         console.error('Ошибка подключения:', error);
-        onError(`Ошибка: ${error.message}`);
         onStatus('Ошибка подключения', 'disconnected');
         clearState();
         return false;

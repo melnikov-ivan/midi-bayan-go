@@ -381,20 +381,6 @@ input[type="range"]::-moz-range-thumb {
     object-fit: contain;
 }
 
-.error {
-    background: #fee;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    color: #c33;
-    display: none;
-}
-
-.error.show {
-    display: block;
-}
-
 .screen {
     display: block;
 }
