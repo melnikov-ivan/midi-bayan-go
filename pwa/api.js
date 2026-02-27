@@ -1,4 +1,5 @@
 const CMD_GET_PROGRAM = 0x01;
+const CMD_SET_PROGRAM = 0x02;
 
 function crc8(data) {
     let crc = 0;
@@ -20,6 +21,18 @@ function buildGetProgramMessage(channel) {
     const payloadLen = payload.length;
     const msg = new Uint8Array(1 + 2 + payloadLen + 1);
     msg[0] = CMD_GET_PROGRAM;
+    msg[1] = payloadLen & 0xff;
+    msg[2] = (payloadLen >> 8) & 0xff;
+    msg.set(payload, 3);
+    msg[3 + payloadLen] = crc8(msg.subarray(0, 3 + payloadLen));
+    return msg;
+}
+
+function buildSetProgramMessage(channel, instrument, volume, octave) {
+    const payload = new Uint8Array([channel, instrument, volume, octave]);
+    const payloadLen = payload.length;
+    const msg = new Uint8Array(1 + 2 + payloadLen + 1);
+    msg[0] = CMD_SET_PROGRAM;
     msg[1] = payloadLen & 0xff;
     msg[2] = (payloadLen >> 8) & 0xff;
     msg.set(payload, 3);
