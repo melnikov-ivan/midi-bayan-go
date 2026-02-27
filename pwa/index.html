@@ -26,7 +26,6 @@
             <img src="bayan.jpg" alt="Баян" class="bayan-image" />
 
             <button id="connectBtn" class="btn-primary" onclick="connect()">Подключиться</button>
-            <button id="disconnectBtn" class="btn-danger" onclick="disconnect()" disabled>Отключиться</button>
         </div>
 
         <!-- Экран настроек: доступен после подключения -->
@@ -138,22 +137,16 @@
             }
         }
 
-        function updateButtons(connected) {
-            document.getElementById('connectBtn').disabled = connected;
-            document.getElementById('disconnectBtn').disabled = !connected;
-            switchScreens(connected);
-        }
-
         async function connect() {
-            const ok = await BLE.connect({
+            await BLE.connect({
                 onStatus: updateStatus,
                 onConnected: () => {
-                    updateButtons(true);
+                    switchScreens(true);
                     readCharacteristic();
                 },
                 onDisconnected: () => {
                     updateStatus('Отключено', 'disconnected');
-                    updateButtons(false);
+                    switchScreens(false);
                 },
                 onValue: processCharacteristicValue
             });
