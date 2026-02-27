@@ -13,14 +13,11 @@ function isConnected() {
 
 async function connect(cbs) {
     callbacks = cbs || {};
-    const onStatus = (text, className) => (callbacks.onStatus && callbacks.onStatus(text, className));
     const onConnected = () => (callbacks.onConnected && callbacks.onConnected());
     const onDisconnected = () => (callbacks.onDisconnected && callbacks.onDisconnected());
     const onValue = (bytes) => (callbacks.onValue && callbacks.onValue(bytes));
 
     try {
-        onStatus('Поиск устройства...', 'scanning');
-
         if (!navigator.bluetooth) {
             throw new Error('Web Bluetooth не поддерживается в этом браузере. Используйте Chrome/Edge на десктопе или Android.');
         }
@@ -30,16 +27,13 @@ async function connect(cbs) {
             optionalServices: [SERVICE_UUID]
         });
 
-        onStatus('Подключение...', 'scanning');
         device.addEventListener('gattserverdisconnected', () => {
             handleDisconnected();
             onDisconnected();
         });
 
         server = await device.gatt.connect();
-        onStatus('Получение сервиса...', 'scanning');
         service = await server.getPrimaryService(SERVICE_UUID);
-        onStatus('Получение характеристики...', 'scanning');
         characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
         characteristic.addEventListener('characteristicvaluechanged', (event) => {
@@ -50,12 +44,10 @@ async function connect(cbs) {
         });
         await characteristic.startNotifications();
 
-        onStatus('Подключено', 'connected');
         onConnected();
         return true;
     } catch (error) {
         console.error('Ошибка подключения:', error);
-        onStatus('Ошибка подключения', 'disconnected');
         clearState();
         return false;
     }

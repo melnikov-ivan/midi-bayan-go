@@ -20,8 +20,6 @@
         <div id="screenEntrance" class="screen">
             <h1>🔵 Midi-Bayan</h1>
 
-            <div id="status" class="status disconnected">Отключено</div>
-
             <img src="bayan.jpg" alt="Баян" class="bayan-image" />
 
             <button id="connectBtn" class="btn-primary" onclick="connect()">Подключиться</button>
@@ -30,8 +28,6 @@
         <!-- Экран настроек: доступен после подключения -->
         <div id="screenSettings" class="screen screen-hidden">
             <h1>⚙️ Настройки</h1>
-
-            <div id="statusSettings" class="status connected">Подключено</div>
 
             <button id="disconnectBtnSettings" class="btn-danger" onclick="disconnect()">Отключиться</button>
 
@@ -70,17 +66,6 @@
     </div>
 
     <script>
-        function updateStatus(text, className) {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = text;
-            statusEl.className = `status ${className}`;
-            const statusSettings = document.getElementById('statusSettings');
-            if (statusSettings && !document.getElementById('screenSettings').classList.contains('screen-hidden')) {
-                statusSettings.textContent = text;
-                statusSettings.className = `status ${className}`;
-            }
-        }
-
         // General MIDI Program names (0–127)
         const GM_INSTRUMENTS = [
             'Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano',
@@ -127,8 +112,6 @@
             if (connected) {
                 entrance.classList.add('screen-hidden');
                 settings.classList.remove('screen-hidden');
-                document.getElementById('statusSettings').textContent = 'Подключено';
-                document.getElementById('statusSettings').className = 'status connected';
             } else {
                 entrance.classList.remove('screen-hidden');
                 settings.classList.add('screen-hidden');
@@ -137,13 +120,11 @@
 
         async function connect() {
             await BLE.connect({
-                onStatus: updateStatus,
                 onConnected: () => {
                     switchScreens(true);
                     readCharacteristic();
                 },
                 onDisconnected: () => {
-                    updateStatus('Отключено', 'disconnected');
                     switchScreens(false);
                 },
                 onValue: processCharacteristicValue
@@ -174,17 +155,14 @@
                 console.log('  канал:', bytes[0], 'инструмент:', bytes[1], 'громкость:', bytes[2], 'октава:', bytes[3]);
                 fillProgramFields(bytes[1], bytes[2], bytes[3]);
             }
-            updateStatus('Подключено', 'connected');
         }
 
         async function readCharacteristic() {
             try {
-                updateStatus('Чтение...', 'scanning');
                 const bytes = await BLE.readValue();
                 processCharacteristicValue(bytes);
             } catch (error) {
                 console.error('Ошибка чтения:', error);
-                updateStatus('Подключено', 'connected');
             }
         }
 
@@ -199,15 +177,11 @@
         async function sendGetProgram() {
             try {
                 const channel = parseInt(document.getElementById('channelValue').value, 10) & 0xff;
-                updateStatus('Отправка get_program...', 'scanning');
                 const msg = buildGetProgramMessage(channel);
                 await BLE.writeValue(msg);
-                updateStatus('Отправка get_program...', 'scanning');
                 console.log('Отправлено get_program, channel:', channel);
-                // Ответ придёт по уведомлению (characteristicvaluechanged)
             } catch (error) {
                 console.error('Ошибка отправки get_program:', error);
-                updateStatus('Подключено', 'connected');
             }
         }
 
@@ -233,14 +207,11 @@
                     console.log('Ошибка валидации: октава должна быть от -3 до 3', octave);
                     return;
                 }
-                updateStatus('Сохранение...', 'scanning');
                 const msg = buildSetProgramMessage(channel & 0xff, instrument & 0xff, volume & 0xff, octave & 0xff);
                 await BLE.writeValue(msg);
-                updateStatus('Подключено', 'connected');
                 console.log('Отправлено set_program:', channel, instrument, volume, octave);
             } catch (error) {
                 console.log('Ошибка отправки set_program:', error);
-                updateStatus('Подключено', 'connected');
             }
         }
 
