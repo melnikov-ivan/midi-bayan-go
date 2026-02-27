@@ -81,7 +81,7 @@ func StartBLEService() {
 
 	// Бесконечный цикл: парсим входящие сообщения и синхронизируем только при новом значении
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 50)
 		if hasNewValue && charValueLen > 0 {
 			hasNewValue = false
 			msg := charValueBuf[:charValueLen]
