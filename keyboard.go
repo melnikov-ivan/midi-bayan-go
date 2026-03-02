@@ -56,9 +56,9 @@ func readShiftRegister() uint8 {
 	return data
 }
 
-// RunKeyboard читает регистр сдвига, при изменении бита отправляет KeyEvent в канал ch.
+// RunKeyboard читает регистр сдвига, при изменении бита отправляет Event в канал ch.
 // Закрывать ch не нужно — цикл бесконечный.
-func RunKeyboard(ch chan<- KeyEvent) {
+func RunKeyboard(ch chan<- Event) {
 	// Настройка пинов для 74HC165N
 	shiftLoadPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	shiftLoadPin.High()
@@ -74,7 +74,7 @@ func RunKeyboard(ch chan<- KeyEvent) {
 			was := (prev & mask) != 0
 			now := (data & mask) != 0
 			if was != now {
-				ch <- KeyEvent{Bit: i, Pressed: now}
+				ch <- Event{Type: NoteOn, Bit: i, Pressed: now}
 			}
 		}
 		prev = data

@@ -59,7 +59,7 @@ func handleGetProgram(payload []byte) (channel, instrument, volume, octave byte,
 }
 
 // handleSetProgram обрабатывает команду set_program: payload = [channel, instrument, volume, octave].
-// Сохраняет настройки в ChannelConfigs и отправляет KeyEvent (Program Change) в EventChannel, если канал задан.
+// Сохраняет настройки в ChannelConfigs и отправляет Event (Program Change) в EventChannel, если канал задан.
 func handleSetProgram(payload []byte) bool {
 	if len(payload) != 4 {
 		return false
@@ -71,10 +71,10 @@ func handleSetProgram(payload []byte) bool {
 	SetChannelConfig(channel, instrument, volume, octave)
 	println("set_program: channel=", channel, "instrument=", instrument, "volume=", volume, "octave=", octave)
 	if EventChannel != nil {
-		EventChannel <- KeyEvent{
-			IsProgramChange:      true,
-			ProgramChangeChannel: channel,
-			ProgramChangeProgram: instrument,
+		EventChannel <- Event{
+			Type:    ProgramChange,
+			Channel: channel,
+			Program: instrument,
 		}
 	}
 	return true

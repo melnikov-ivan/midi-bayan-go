@@ -9,22 +9,28 @@ import (
 	"time"
 )
 
-// KeyEvent — изменение состояния клавиши: бит 0..7, нажата или отпущена.
-// Либо событие Program Change (IsProgramChange == true): тогда Channel и Program задают MIDI program change.
-type KeyEvent struct {
-	Bit     uint8 // индекс бита 0..7
-	Pressed bool  // true = нажата, false = отпущена
+// KeyEventType — тип события: нота (клавиша) или смена программы.
+type KeyEventType uint8
 
-	// Program Change (если true, отправляется MIDI Program Change вместо ноты)
-	IsProgramChange     bool
-	ProgramChangeChannel uint8
-	ProgramChangeProgram uint8
+const (
+	NoteOn        KeyEventType = iota // событие клавиши (Bit, Pressed)
+	ProgramChange                    // смена инструмента (Channel, Program)
+)
+
+// Event — изменение состояния клавиши (Type=NoteOn) либо событие Program Change (Type=ProgramChange).
+type Event struct {
+	Type   KeyEventType // NoteOn или ProgramChange
+	Bit    uint8        // индекс бита 0..7 (для NoteOn)
+	Pressed bool        // true = нажата, false = отпущена (для NoteOn)
+
+	Channel uint8 // для ProgramChange
+	Program uint8 // для ProgramChange
 }
 
 var led = machine.LED
 
 // EventChannel — общий канал событий: клавиатура (RunKeyboard) и BLE (handleSetProgram Program Change).
-var EventChannel chan KeyEvent
+var EventChannel chan Event
 
 func main() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -33,7 +39,7 @@ func main() {
 	startMidiOut()
 	println("MIDI Controller (UART) запущен")
 
-	EventChannel = make(chan KeyEvent, 8)
+	EventChannel = make(chan Event, 8)
 	go StartBLEService()
 	go RunKeyboard(EventChannel)
 
@@ -44,24 +50,27 @@ func main() {
 
 	// Ноты берём из конфига keymap.BitToNote; Program Change приходит из BLE (handleSetProgram).
 	for ev := range EventChannel {
-		if ev.IsProgramChange {
-			SendProgramChange(ev.ProgramChangeChannel, ev.ProgramChangeProgram)
-			println("MIDI: Program Change ch=", ev.ProgramChangeChannel, "program=", ev.ProgramChangeProgram)
+		switch ev.Type {
+		case ProgramChange:
+			SendProgramChange(ev.Channel, ev.Program)
+			println("MIDI: Program Change ch=", ev.Channel, "program=", ev.Program)
 			blink()
-			continue
+		case NoteOn:
+			if int(ev.Bit) >= len(BitToNote) {
+				break
+			}
+			note := BitToNote[ev.Bit]
+			if ev.Pressed {
+				SendNoteOn(ch, note, velocity)
+				println("MIDI: Note On ", note)
+			} else {
+				SendNoteOff(ch, note)
+				println("MIDI: Note Off", note)
+			}
+			blink()
+		default:
+			// неизвестный тип — пропускаем
 		}
-		if int(ev.Bit) >= len(BitToNote) {
-			continue
-		}
-		note := BitToNote[ev.Bit]
-		if ev.Pressed {
-			SendNoteOn(ch, note, velocity)
-			println("MIDI: Note On ", note)
-		} else {
-			SendNoteOff(ch, note)
-			println("MIDI: Note Off", note)
-		}
-		blink()
 	}
 }
 
