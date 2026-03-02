@@ -10,12 +10,21 @@ import (
 )
 
 // KeyEvent — изменение состояния клавиши: бит 0..7, нажата или отпущена.
+// Либо событие Program Change (IsProgramChange == true): тогда Channel и Program задают MIDI program change.
 type KeyEvent struct {
-	Bit    uint8 // индекс бита 0..7
-	Pressed bool // true = нажата, false = отпущена
+	Bit     uint8 // индекс бита 0..7
+	Pressed bool  // true = нажата, false = отпущена
+
+	// Program Change (если true, отправляется MIDI Program Change вместо ноты)
+	IsProgramChange     bool
+	ProgramChangeChannel uint8
+	ProgramChangeProgram uint8
 }
 
 var led = machine.LED
+
+// EventChannel — общий канал событий: клавиатура (RunKeyboard) и BLE (handleSetProgram Program Change).
+var EventChannel chan KeyEvent
 
 func main() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -24,18 +33,23 @@ func main() {
 	startMidiOut()
 	println("MIDI Controller (UART) запущен")
 
+	EventChannel = make(chan KeyEvent, 8)
 	go StartBLEService()
+	go RunKeyboard(EventChannel)
 
 	const (
 		ch       = 0   // MIDI канал 0..15
 		velocity = 100
 	)
 
-	keyCh := make(chan KeyEvent, 8)
-	go RunKeyboard(keyCh)
-
-	// Ноты берём из конфига keymap.BitToNote
-	for ev := range keyCh {
+	// Ноты берём из конфига keymap.BitToNote; Program Change приходит из BLE (handleSetProgram).
+	for ev := range EventChannel {
+		if ev.IsProgramChange {
+			SendProgramChange(ev.ProgramChangeChannel, ev.ProgramChangeProgram)
+			println("MIDI: Program Change ch=", ev.ProgramChangeChannel, "program=", ev.ProgramChangeProgram)
+			blink()
+			continue
+		}
 		if int(ev.Bit) >= len(BitToNote) {
 			continue
 		}

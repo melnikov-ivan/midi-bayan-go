@@ -42,8 +42,6 @@ func readShiftRegister() uint8 {
 	for i := 0; i < 8; i++ {
 		if i > 0 {
 			// Сдвиг: фронт LOW→HIGH. После сдвига на QH появляется следующий бит.
-			clockPin.Low()
-			time.Sleep(shiftDelay)
 			clockPin.High()
 			time.Sleep(shiftDelay) // время установки QH после сдвига
 			clockPin.Low()
@@ -80,7 +78,7 @@ func RunKeyboard(ch chan<- KeyEvent) {
 			}
 		}
 		prev = data
-		time.Sleep(1)
+		time.Sleep(1 * time.Millisecond)
 	}
 }
 

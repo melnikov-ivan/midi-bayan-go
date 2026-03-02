@@ -35,3 +35,9 @@ func SendNoteOff(channel uint8, note uint8) {
 	ch := channel & 0x0F
 	machine.UART0.Write([]byte{0x80 | ch, note & 0x7F, 0})
 }
+
+// SendProgramChange отправляет MIDI Program Change по UART (0xC0 | channel, program).
+func SendProgramChange(channel uint8, program uint8) {
+	ch := channel & 0x0F
+	machine.UART0.Write([]byte{0xC0 | ch, program & 0x7F})
+}

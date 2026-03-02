@@ -102,7 +102,6 @@ func StartBLEService() {
 				println("unknown command:", cmd)
 			}
 		}
-		println("tick")
 	}
 }
 
