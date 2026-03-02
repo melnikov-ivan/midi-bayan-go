@@ -14,12 +14,12 @@ type KeyEventType uint8
 
 const (
 	NoteOn        KeyEventType = iota // событие клавиши (Channel, Note, Velocity: 100=нажато, 0=отпущено)
-	ProgramChange                    // смена инструмента (Channel, Program)
+	ProgramChange                     // смена инструмента (Channel, Program)
+	Volume                            // громкость канала (Channel, Volume)
 )
 
-// Event — изменение состояния клавиши (Type=NoteOn) либо событие Program Change (Type=ProgramChange).
 type Event struct {
-	Type KeyEventType // NoteOn или ProgramChange
+	Type KeyEventType // NoteOn, ProgramChange или Volume
 
 	// NoteOn: клавиатура заполняет из keymap (Velocity: 100=нажато, 0=отпущено)
 	Channel  uint8
@@ -28,6 +28,9 @@ type Event struct {
 
 	// ProgramChange
 	Program uint8
+
+	// Volume (CC #7)
+	Volume uint8
 }
 
 var led = machine.LED
@@ -52,6 +55,10 @@ func main() {
 		case ProgramChange:
 			SendProgramChange(ev.Channel, ev.Program)
 			println("MIDI: Program Change ch=", ev.Channel, "program=", ev.Program)
+			blink()
+		case Volume:
+			SendVolume(ev.Channel, ev.Volume)
+			println("MIDI: Volume ch=", ev.Channel, "volume=", ev.Volume)
 			blink()
 		case NoteOn:
 			SendNoteOn(ev.Channel, ev.Note, ev.Velocity)

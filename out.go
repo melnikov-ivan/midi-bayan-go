@@ -41,3 +41,9 @@ func SendProgramChange(channel uint8, program uint8) {
 	ch := channel & 0x0F
 	machine.UART0.Write([]byte{0xC0 | ch, program & 0x7F})
 }
+
+// SendVolume отправляет MIDI Control Change #7 (Channel Volume) по UART (0xB0 | channel, 0x07, value).
+func SendVolume(channel uint8, volume uint8) {
+	ch := channel & 0x0F
+	machine.UART0.Write([]byte{0xB0 | ch, 0x07, volume & 0x7F})
+}

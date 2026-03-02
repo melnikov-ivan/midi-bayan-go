@@ -76,6 +76,11 @@ func handleSetProgram(payload []byte) bool {
 			Channel: channel,
 			Program: instrument,
 		}
+		EventChannel <- Event{
+			Type:    Volume,
+			Channel: channel,
+			Volume:  volume,
+		}
 	}
 	return true
 }
