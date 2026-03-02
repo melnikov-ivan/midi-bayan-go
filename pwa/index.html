@@ -44,11 +44,11 @@
             <div class="row-fields">
                 <div class="input-group">
                     <label>Инструмент</label>
-                    <select id="instrumentValue"></select>
+                    <select id="instrumentValue" onchange="sendSetProgram()"></select>
                 </div>
                 <div class="input-group">
                     <label>Громкость <span id="volumeValueDisplay">100</span></label>
-                    <input type="range" id="volumeValue" min="0" max="127" value="100" oninput="document.getElementById('volumeValueDisplay').textContent=this.value" />
+                    <input type="range" id="volumeValue" min="0" max="127" value="100" oninput="document.getElementById('volumeValueDisplay').textContent=this.value" onchange="sendSetProgram()" />
                 </div>
                 <div class="input-group">
                     <label>Октава</label>
@@ -104,6 +104,7 @@
             v = Math.max(-3, Math.min(3, v));
             el.value = v;
             document.getElementById('octaveValueDisplay').textContent = v;
+            sendSetProgram();
         }
 
         function switchScreens(connected) {
