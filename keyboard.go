@@ -74,7 +74,18 @@ func RunKeyboard(ch chan<- Event) {
 			was := (prev & mask) != 0
 			now := (data & mask) != 0
 			if was != now {
-				ch <- Event{Type: NoteOn, Bit: i, Pressed: now}
+				if int(i) < len(BitToNote) {
+					Velocity := uint8(0)
+					if now {
+						Velocity = DefaultVelocity
+					}
+					ch <- Event{
+						Type:     NoteOn,
+						Channel:  DefaultChannel,
+						Note:     BitToNote[i],
+						Velocity: Velocity,
+					}
+				}
 			}
 		}
 		prev = data

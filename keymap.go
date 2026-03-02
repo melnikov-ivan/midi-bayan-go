@@ -13,3 +13,9 @@ var BitToNote = [8]uint8{
 	66, // бит 6: F#4
 	67, // бит 7: G4
 }
+
+// MIDI-канал (0–15) и громкость (velocity, 0–127) по умолчанию для нот с клавиатуры.
+const (
+	DefaultChannel  = 0
+	DefaultVelocity = 100
+)

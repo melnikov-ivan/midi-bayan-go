@@ -13,18 +13,21 @@ import (
 type KeyEventType uint8
 
 const (
-	NoteOn        KeyEventType = iota // событие клавиши (Bit, Pressed)
+	NoteOn        KeyEventType = iota // событие клавиши (Channel, Note, Velocity: 100=нажато, 0=отпущено)
 	ProgramChange                    // смена инструмента (Channel, Program)
 )
 
 // Event — изменение состояния клавиши (Type=NoteOn) либо событие Program Change (Type=ProgramChange).
 type Event struct {
-	Type   KeyEventType // NoteOn или ProgramChange
-	Bit    uint8        // индекс бита 0..7 (для NoteOn)
-	Pressed bool        // true = нажата, false = отпущена (для NoteOn)
+	Type KeyEventType // NoteOn или ProgramChange
 
-	Channel uint8 // для ProgramChange
-	Program uint8 // для ProgramChange
+	// NoteOn: клавиатура заполняет из keymap (Velocity: 100=нажато, 0=отпущено)
+	Channel  uint8
+	Note     uint8
+	Velocity uint8
+
+	// ProgramChange
+	Program uint8
 }
 
 var led = machine.LED
@@ -43,12 +46,7 @@ func main() {
 	go StartBLEService()
 	go RunKeyboard(EventChannel)
 
-	const (
-		ch       = 0   // MIDI канал 0..15
-		velocity = 100
-	)
-
-	// Ноты берём из конфига keymap.BitToNote; Program Change приходит из BLE (handleSetProgram).
+	// Ноты и параметры MIDI берутся из keymap; Program Change приходит из BLE (handleSetProgram).
 	for ev := range EventChannel {
 		switch ev.Type {
 		case ProgramChange:
@@ -56,16 +54,11 @@ func main() {
 			println("MIDI: Program Change ch=", ev.Channel, "program=", ev.Program)
 			blink()
 		case NoteOn:
-			if int(ev.Bit) >= len(BitToNote) {
-				break
-			}
-			note := BitToNote[ev.Bit]
-			if ev.Pressed {
-				SendNoteOn(ch, note, velocity)
-				println("MIDI: Note On ", note)
+			SendNoteOn(ev.Channel, ev.Note, ev.Velocity)
+			if ev.Velocity > 0 {
+				println("MIDI: Note On ", ev.Note)
 			} else {
-				SendNoteOff(ch, note)
-				println("MIDI: Note Off", note)
+				println("MIDI: Note Off", ev.Note)
 			}
 			blink()
 		default:
