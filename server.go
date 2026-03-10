@@ -72,6 +72,7 @@ func StartBLEService() {
 	charValueBuf[0] = 0
 
 	// Регистрируем сервис через конфиг
+
 	must(adapter.AddService(&bluetooth.Service{
 		UUID: serviceUUID,
 		Characteristics: []bluetooth.CharacteristicConfig{
@@ -97,13 +98,13 @@ func StartBLEService() {
 		},
 	}))
 
-	// Реклама: на nRF52 в TinyGo поддерживаются только 16-битные UUID.
-	// Берём первые 2 байта MIDI-сервис UUID (0x03B8) как короткую форму —
-	// этого достаточно, чтобы iOS CoreMIDI нашла устройство по рекламе.
+	// Реклама: пакет ограничен 31 байтом.
+	// Flags(3) + Name("Bayan"=7) + 128-bit UUID(18) = 28 байт — влезает.
+	// Полный 128-bit UUID MIDI-сервиса нужен macOS CoreMIDI для обнаружения.
 	adv := adapter.DefaultAdvertisement()
 	must(adv.Configure(bluetooth.AdvertisementOptions{
-		LocalName:    "Midi-Bayan",
-		ServiceUUIDs: []bluetooth.UUID{bluetooth.New16BitUUID(0x03B8)},
+		LocalName:    "Bayan",
+		ServiceUUIDs: []bluetooth.UUID{midiServiceUUID},
 	}))
 	must(adv.Start())
 
