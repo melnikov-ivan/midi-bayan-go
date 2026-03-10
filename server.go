@@ -13,11 +13,41 @@ var charValueBuf [64]byte
 var charValueLen int = 1 // начальное значение: 1 байт (0)
 var hasNewValue bool     // флаг: в WriteEvent записали новое значение (вывод только по нему)
 
-// StartBLEService включает адаптер, регистрирует сервис, запускает рекламу и блокируется.
+// MidiChar — характеристика стандартного BLE MIDI сервиса.
+// Используется в out.go для отправки MIDI-сообщений через BLE.
+var MidiChar bluetooth.Characteristic
+
+// StartBLEService включает адаптер, регистрирует сервисы, запускает рекламу и блокируется.
 // Вызывать из main в отдельной горутине: go StartBLEService().
 func StartBLEService() {
 	must(adapter.Enable())
 
+	// --- Стандартный BLE MIDI сервис ---
+	// Service UUID: 03B80E5A-EDE8-4B33-A751-6CE34EC4C700
+	// Characteristic UUID: 7772E5DB-3868-4112-A1A9-F2669D106BF3
+	midiServiceUUID := bluetooth.NewUUID([16]byte{
+		0x03, 0xB8, 0x0E, 0x5A, 0xED, 0xE8, 0x4B, 0x33,
+		0xA7, 0x51, 0x6C, 0xE3, 0x4E, 0xC4, 0xC7, 0x00,
+	})
+	midiCharUUID := bluetooth.NewUUID([16]byte{
+		0x77, 0x72, 0xE5, 0xDB, 0x38, 0x68, 0x41, 0x12,
+		0xA1, 0xA9, 0xF2, 0x66, 0x9D, 0x10, 0x6B, 0xF3,
+	})
+
+	must(adapter.AddService(&bluetooth.Service{
+		UUID: midiServiceUUID,
+		Characteristics: []bluetooth.CharacteristicConfig{
+			{
+				Handle: &MidiChar,
+				UUID:   midiCharUUID,
+				Flags: bluetooth.CharacteristicReadPermission |
+					bluetooth.CharacteristicWriteWithoutResponsePermission |
+					bluetooth.CharacteristicNotifyPermission,
+			},
+		},
+	}))
+
+	// --- Кастомный сервис управления (get/set program) ---
 	// 128-bit UUID'ы (произвольные)
 	serviceUUID := bluetooth.NewUUID([16]byte{
 		0x12, 0x34, 0x56, 0x78,
@@ -67,13 +97,13 @@ func StartBLEService() {
 		},
 	}))
 
-	// Реклама: на nRF52 в TinyGo в объявлении поддерживаются только 16-битные UUID.
-	// Берём короткую форму из первых двух байт 128-битного UUID сервиса (0x1234).
-	advServiceUUID := bluetooth.New16BitUUID(0x1234)
+	// Реклама: включаем стандартный BLE MIDI сервис UUID.
+	// На nRF52 в TinyGo 128-битные UUID в рекламе поддерживаются не всегда,
+	// но попытка добавить их позволяет iOS CoreMIDI обнаружить устройство.
 	adv := adapter.DefaultAdvertisement()
 	must(adv.Configure(bluetooth.AdvertisementOptions{
 		LocalName:    "Midi-Bayan",
-		ServiceUUIDs: []bluetooth.UUID{advServiceUUID},
+		ServiceUUIDs: []bluetooth.UUID{midiServiceUUID},
 	}))
 	must(adv.Start())
 
