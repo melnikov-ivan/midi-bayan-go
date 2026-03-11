@@ -47,9 +47,9 @@ func StartBLEService() {
 		},
 	}))
 
-	// --- Кастомный сервис управления (get/set program) ---
+	// --- Config сервис (get/set program) ---
 	// 128-bit UUID'ы (произвольные)
-	serviceUUID := bluetooth.NewUUID([16]byte{
+	configServiceUUID := bluetooth.NewUUID([16]byte{
 		0x12, 0x34, 0x56, 0x78,
 		0x12, 0x34,
 		0x56, 0x78,
@@ -57,7 +57,7 @@ func StartBLEService() {
 		0x56, 0x78, 0x90, 0xab, 0xcd, 0xef,
 	})
 
-	charUUID := bluetooth.NewUUID([16]byte{
+	configCharUUID := bluetooth.NewUUID([16]byte{
 		0xfe, 0xdc, 0xba, 0x09,
 		0x87, 0x65,
 		0x43, 0x21,
@@ -66,19 +66,17 @@ func StartBLEService() {
 	})
 
 	// Переменная для хранения характеристики
-	var char bluetooth.Characteristic
+	var configChar bluetooth.Characteristic
 
 	// Начальное значение — срез глобального буфера, без аллокации при чтении клиентом
 	charValueBuf[0] = 0
 
-	// Регистрируем сервис через конфиг
-
 	must(adapter.AddService(&bluetooth.Service{
-		UUID: serviceUUID,
+		UUID: configServiceUUID,
 		Characteristics: []bluetooth.CharacteristicConfig{
 			{
-				Handle: &char,
-				UUID:   charUUID,
+				Handle: &configChar,
+				UUID:   configCharUUID,
 				Value:  charValueBuf[:charValueLen],
 				Flags:  bluetooth.CharacteristicReadPermission | bluetooth.CharacteristicWritePermission | bluetooth.CharacteristicNotifyPermission,
 				WriteEvent: func(client bluetooth.Connection, offset int, value []byte) {
@@ -125,7 +123,7 @@ func StartBLEService() {
 			case cmdGetProgram:
 				if ch, inst, vol, oct, ok := handleGetProgram(payload); ok {
 					charValueBuf[0], charValueBuf[1], charValueBuf[2], charValueBuf[3] = ch, inst, vol, oct
-					char.Write(charValueBuf[:4])
+					configChar.Write(charValueBuf[:4])
 				}
 			case cmdSetProgram:
 				handleSetProgram(payload)
